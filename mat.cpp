@@ -11,13 +11,13 @@ void mat::addEvent(event *e) {
     if(!inCurrentComponent(*e))
     {
  //       std::cout<<"NOT IN CURRENT COMPONENT "<<std::endl;
-        components.push_back(new component(components.size(),epsilon,groupThreshold,position));
+        components.push_back(new component(components.size(),epsilon,groupThreshold,position,inclusionT));
         if(components.size()>1)
         {
             component *c= components[components.size()-2];
             if(c->isThisAGroup())
             {
-               /*if(c.numberOfGroupedEvents()>100)*/ std::cout<<"                                                                                                  abandoning a group with "<<c->numberOfGroupedEvents()<<" elements and id "<<c->getId()<<" at mat Position "<<position<<" with athletes classified from "<<c->getFirstCurrentClassification()<<" to "<<c->getLastCurrentClassification()<<std::endl;
+               //if(c.numberOfGroupedEvents()>100) std::cout<<"                                                                                                  abandoning a group with "<<c->numberOfGroupedEvents()<<" elements and id "<<c->getId()<<" at mat Position "<<position<<" with athletes classified from "<<c->getFirstClassificationIthMat(id)<<" to "<<c->getLastClassificationIthMat(id)<<std::endl;
                // Update largest group information
                 if( largestGroupId==-1 || largestGroupEntities<c->numberOfGroupedEvents() )
                 {
@@ -56,11 +56,10 @@ void mat::addEvent(event *e) {
     //update the groups that share entities with this one
     //in any case, we have another athlete passed, update his list
     a->setNextClassification(athletesPassed);
-    if((athletesPassed % 10000 == 0)||(athletesPassed==100))
-    {
-        std::cout<<athletesPassed<<" guys passed at mat "<<position<<" the last guy was "<<*(e->getWho())<<" at this moment this mat has "<<components.size()<<" components and "<<groups.size()<<" groups "<<std::endl;
-
-    }
+   // if((athletesPassed % 10000 == 0)||(athletesPassed==100))
+   // {
+    //    std::cout<<athletesPassed<<" guys passed at mat "<<position<<" the last guy was "<<*(e->getWho())<<" at this moment this mat has "<<components.size()<<" components and "<<groups.size()<<" groups "<<std::endl;
+    //}
     athletesPassed++;
 
 

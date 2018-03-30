@@ -112,6 +112,7 @@ public:
     }
 
     int getLastClassification(){return classificationList.back();}
+    int getIthClassification(int numMat){return classificationList[numMat];}
 
     void computePathAtIthMat(int i);// should have already computed all the previous paces
     void computeAllPaceIntervals();

@@ -30,17 +30,13 @@ public:
 
     groupRelations(mat *mat1, component *group1) : mat1(mat1), group(group1)
     {
-        std::cout<<"GroupRelation creator,  "<<mat1->getcomponents()->size()<<std::endl;
+       // std::cout<<"GroupRelation creator,  "<<mat1->getcomponents()->size()<<std::endl;
         touchedGroups=std::list<int>();
-        std::cout<<"0CCCCCCCCCCCCCCCCCCC"<<std::endl;
         numberOfSharedEntities=std::vector<int>(mat1->getcomponents()->size());
-        std::cout<<"1CCCCCCCCCCCCCCCCCCC "<<mat1->getcomponents()->size()<<std::endl;
         inclusionCoefficients=std::vector<double>(mat1->getcomponents()->size());
-        std::cout<<"2CCCCCCCCCCCCCCCCCCC"<<std::endl;
         numberOfSharedEntities=std::vector<int>(mat1->getcomponents()->size());
 
-        //     jacardCoefficients=std::vector<double>(mat1->getcomponents()->size());
-        std::cout<<"Finishing GroupRelation creator,  "<<mat1->getcomponents()->size()<<std::endl;
+       // std::cout<<"Finishing GroupRelation creator,  "<<mat1->getcomponents()->size()<<std::endl;
 
     }
 
@@ -86,7 +82,7 @@ public:
 
         // always accumulate
        numberOfSharedEntities[groupId] = numberOfSharedEntities[groupId] + 1;
-       std::cout<<"added shared entity siez: "<<touchedGroups.size()<< " just wrote "<<numberOfSharedEntities[groupId] + 1<<" at group number "<<groupId<<" size of vector "<<numberOfSharedEntities.size()<<std::endl;
+      // std::cout<<"added shared entity siez: "<<touchedGroups.size()<< " just wrote "<<numberOfSharedEntities[groupId] + 1<<" at group number "<<groupId<<" size of vector "<<numberOfSharedEntities.size()<<std::endl;
 
     }
 

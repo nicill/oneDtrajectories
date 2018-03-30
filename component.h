@@ -16,6 +16,7 @@ class component {
     std::vector<event *> groupedEvents; //sorted collection of events
     int groupThreshold; //the number that will be used to define a group threshold
     double epsilon;
+    double inclusionT;
 
     double matPosition; // what mat are we in (its position)
 
@@ -30,8 +31,11 @@ class component {
     component* doubleBefore;
     component* doubleAfter;
 
+    int numEntitiesSharedBefore;
+    int numEntitiesSharedAfter;
+
 public:
-    component(int id, double eps, int gT, double pos) : id(id) , epsilon(eps) , groupThreshold(gT), matPosition(pos){
+    component(int id, double eps, int gT, double pos, double inc) : id(id) , epsilon(eps) , groupThreshold(gT), matPosition(pos),inclusionT(inc){
        // std::cout<<"Creating component with id "<<id<<std::endl;
         thisAGroup=false;
         relatedGroupsBefore=std::list<component*>();
@@ -42,6 +46,9 @@ public:
 
         doubleAfter= nullptr;
         doubleBefore= nullptr;
+
+        numEntitiesSharedAfter=0;
+        numEntitiesSharedBefore=0;
     }
 
     //copy constructor
@@ -50,6 +57,7 @@ public:
         id=cprima.id;
         groupThreshold=cprima.groupThreshold;
         epsilon=cprima.epsilon;
+        inclusionT=cprima.inclusionT;
         thisAGroup=cprima.thisAGroup;
         matPosition=cprima.matPosition;
 
@@ -62,6 +70,10 @@ public:
 
         doubleAfter= cprima.doubleAfter;
         doubleBefore= cprima.doubleBefore;
+
+        numEntitiesSharedBefore=cprima.numEntitiesSharedBefore;
+        numEntitiesSharedAfter=cprima.numEntitiesSharedAfter;
+
     }
 
 
@@ -70,6 +82,7 @@ public:
         id=cprima.id;
         groupThreshold=cprima.groupThreshold;
         epsilon=cprima.epsilon;
+        inclusionT=cprima.inclusionT;
         thisAGroup=cprima.thisAGroup;
         matPosition=cprima.matPosition;
 
@@ -82,6 +95,9 @@ public:
 
         doubleAfter= cprima.doubleAfter;
         doubleBefore= cprima.doubleBefore;
+
+        numEntitiesSharedBefore=cprima.numEntitiesSharedBefore;
+        numEntitiesSharedAfter=cprima.numEntitiesSharedAfter;
 
         return *this;
 
@@ -110,6 +126,10 @@ public:
     int getLastCurrentClassification();
     int getFirstCurrentClassification();
 
+    int getLastClassificationIthMat(int matNumber);
+    int getFirstClassificationIthMat(int matNumber);
+
+
     typedef std::vector<event*>::iterator iterator;
     typedef std::vector<event*>::const_iterator const_iterator;
     iterator begin() { return groupedEvents.begin(); }
@@ -119,8 +139,8 @@ public:
 
     int numberOfGroupedEvents(){return groupedEvents.size();}
 
-    void addPrevioudRelatedGroup(component *precedent); // the component next needs to be a group and hold some jackard and/or inclusion coefficient conditions
-    void addSubsequentRelatedGroup(component *next); // the component next needs to be a group and hold some jackard and/or inclusion coefficient conditions
+    void addPreviousRelatedGroup(component *precedent); // the component next needs to be a group and hold some inclusion coefficient conditions
+    void addSubsequentRelatedGroup(component *next); // the component next needs to be a group and hold some inclusion coefficient conditions
 
     int maximumSurvivedSteps();// return how many steps forward this group has doubly related groups
     int maximumIncludedStepsForward();// return how many steps forward this group has inclusion relations.
@@ -136,6 +156,7 @@ public:
     }
 
     void setIncludedBefore(component *includedBefore) {
+      //  std::cout<<"///////////////////////////////////////////////component::setIncludedBefore linking this groups with "<<this->numberOfGroupedEvents()<<" entities to a guy in the previous step with this many "<<includedBefore->numberOfGroupedEvents()<<" "<<relatedGroupsBefore.size()<<std::endl;
         component::includedBefore = includedBefore;
     }
 
@@ -144,6 +165,7 @@ public:
     }
 
     void setIncludedAfter(component *includedAfter) {
+        //std::cout<<"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\component::setIncludedafter linking this groups with "<<this->numberOfGroupedEvents()<<" entities to a guy in the nextstep with this many "<<includedAfter->numberOfGroupedEvents()<<std::endl;
         component::includedAfter = includedAfter;
     }
 
@@ -161,12 +183,44 @@ public:
     }
 
     void setDoubleAfter(component *doubleAfter) {
-       // std::cout<<"Setting double after "<<matPosition<<" "<<doubleAfter<<std::endl;
+        //std::cout<<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ Setting double after "<<matPosition<<" "<<doubleAfter<<std::endl;
         component::doubleAfter = doubleAfter;
     }
 
+    int getNumEntitiesSharedBefore() const {
+        return numEntitiesSharedBefore;
+    }
+
+    void setNumEntitiesSharedBefore(int numEntitiesSharedBefore) {
+        component::numEntitiesSharedBefore = numEntitiesSharedBefore;
+    }
+
+    int getNumEntitiesSharedAfter() const {
+        return numEntitiesSharedAfter;
+    }
+
+    void setNumEntitiesSharedAfter(int numEntitiesSharedAfter) {
+        component::numEntitiesSharedAfter = numEntitiesSharedAfter;
+    }
+
+
     bool willSurvive(){return doubleAfter!= nullptr;}
     bool hasSurvived(){return doubleBefore!= nullptr;}
+
+    bool appears(){return (!containsSomeoneBefore()&&!isIncludedBackward());}
+    bool dissappears(){return (!containsSomeoneAfter()&&!isIncludedForward());}
+
+    bool expands(){return ((relatedGroupsBefore.size()==1)&&!hasSurvived());}
+    bool shrinks(){return ((relatedGroupsAfter.size()==1)&&!willSurvive());}
+
+    bool merges(){
+       // std::cout<<"component::merges group id "<<id<<" at mat "<<matPosition<<" booleans "<<(relatedGroupsBefore.size()>1)<<" "<<!hasSurvived()<<" "<<(numEntitiesSharedBefore/groupedEvents.size()>inclusionT)<< " numbers: "<<numEntitiesSharedBefore<<"/"<<groupedEvents.size()<<"="<<numEntitiesSharedBefore/groupedEvents.size()<<" >? "<<inclusionT<<std::endl;
+        return (relatedGroupsBefore.size()>1)&&!hasSurvived()&&(numEntitiesSharedBefore/groupedEvents.size()>inclusionT);};
+    bool splits(){return (relatedGroupsAfter.size()>1)&&!willSurvive()&&(numEntitiesSharedAfter/groupedEvents.size()>inclusionT);};
+
+    bool coheres(){return (relatedGroupsBefore.size()>1)&&!hasSurvived()&&!merges(); };
+    bool disbands(){return (relatedGroupsAfter.size()>1)&&!willSurvive()&&!splits();};
+
 
     bool isIncludedForward(){return includedAfter!= nullptr;}
     bool isIncludedBackward(){return includedBefore!= nullptr;}
@@ -177,7 +231,6 @@ public:
     std::string listSuccessorSurvivors();
     std::string listSuccessorRelated();
     std::string listPredecessorRelated();
-
 
     void write(std::ostream& os)
     {

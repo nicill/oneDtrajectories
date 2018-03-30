@@ -84,6 +84,15 @@ class groupComputations {
     std::list<component*>* longestRelatedGroupForward();// return all the groups that are included forward for any interval
     std::list<component*>* longestRelatedGroupBackward();// return all the groups that are included backward for any interval
 
+    int countSurvives();
+    int countMerges();
+    int countSplits();
+    int countExpands();
+    int countShrinks();
+    int countCoheres();
+    int countDisbands();
+    int countAppears();
+    int countDissappears();
 
     event lastEvent()
     {

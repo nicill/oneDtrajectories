@@ -20,7 +20,7 @@ bool component::addEvent(event *e) //return true if it just became a group
     if(groupedEvents.size()==groupThreshold)
     {
         setThisAGroup(true);
-        std::cout<<"component with id "<<id<<" JUST BECAME A GROUP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MAT POSITION IS "<<matPosition<<std::endl;
+        //std::cout<<"component with id "<<id<<" JUST BECAME A GROUP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MAT POSITION IS "<<matPosition<<std::endl;
         return true;
     }
 
@@ -28,24 +28,26 @@ bool component::addEvent(event *e) //return true if it just became a group
 
 }
 
-void component::addPrevioudRelatedGroup(component *precedent)
+void component::addPreviousRelatedGroup(component *precedent)
 {
-    std::cout<<"                                                                                                                                 AddingPreviously related Griput to group with "<<id<<" at mat "<<matPosition<<" group with id "<<precedent->getId()<<" at mat "<<precedent->matPosition<<std::endl;
+    //std::cout<<"                                                                                                                                 AddingPreviously related Griput to group with "<<id<<" at mat "<<matPosition<<" group with id "<<precedent->getId()<<" at mat "<<precedent->matPosition<<std::endl;
     // annotate previous group in this list
     relatedGroupsBefore.push_back(precedent);
 
     // also connect the previous to this
-    precedent->relatedGroupsAfter.push_back(this);
+//    precedent->relatedGroupsAfter.push_back(this);
 //    std::cout<<"WRITTING PREVIOUS COMPONENT "<<*precedent<<std::endl;
 
 }
 
 void component::addSubsequentRelatedGroup(component *next)
 {
+   // std::cout<<"                                                                                                                                 AddingSUBSEQ related Griput to group with "<<id<<" at mat "<<matPosition<<" group with id "<<next->getId()<<" at mat "<<next->matPosition<<std::endl;
+
     // annotate previous group in this list
     relatedGroupsAfter.push_back(next);
     // also connect the previous to this
-    next->relatedGroupsBefore.push_back(this);
+  //  next->relatedGroupsBefore.push_back(this);
 
 }
 
@@ -79,27 +81,37 @@ int component::maximumIncludedStepsBackward() {
 std::string component::listSuccessorSurvivors() {
     if(!willSurvive())return std::string(" ").append(std::to_string(getId()));
     else {
-        std::string s=" ";
+        std::string s=" Position: ";
+        s.append(std::to_string((int)matPosition));
+        s.append(", ID: ");
         s.append(std::to_string(getId()));
         return s.append(doubleAfter->listSuccessorSurvivors());}
 }
 
 std::string component::listSuccessorRelated() {
-    if(!isIncludedForward())return std::string(" ").append(std::to_string(getId()));
+    if(!isIncludedForward())return std::string(" final ID: ").append(std::to_string(getId()));
     else
     {
-        std::string s=" ";
+        std::string s=" Position: ";
+        s.append(std::to_string((int)matPosition));
+        s.append(", ID: ");
         s.append(std::to_string(getId()));
         return s.append(includedAfter->listSuccessorRelated());
     }
 }
 
 std::string component::listPredecessorRelated() {
-    if(!isIncludedBackward())return std::to_string(getId()).append(std::string(" "));
+    if(!isIncludedBackward())return std::to_string(getId()).append(std::string(" <-final ID "));
     else
     {
-        std::string s=" ";
+        std::string s=" Position: ";
+        s.append(std::to_string((int)matPosition));
+        s.append(", ID: ");
         s.append(std::to_string(getId()));
         return includedBefore->listPredecessorRelated().append(s);
     }
 }
+
+int component::getLastClassificationIthMat(int matNumber) {return groupedEvents[groupedEvents.size()-1]->getWho()->getIthClassification(matNumber); }
+
+int component::getFirstClassificationIthMat(int matNumber) {return groupedEvents[0]->getWho()->getIthClassification(matNumber);}

@@ -17,6 +17,7 @@ class mat {
     int athletesPassed; // the number of athletes that passed by this mat
 
     double epsilon;
+    double inclusionT;
     int groupThreshold;
     std::vector<int> groups;
     int largestGroupId; // keep the id of the group with the most entities
@@ -25,11 +26,12 @@ class mat {
 
 public:
 
-    mat(double position, int id, double eps, int gt) : position(position), id(id), epsilon(eps) , groupThreshold(gt)
+    mat(double position, int id, double eps, int gt, double inc) : position(position), id(id), epsilon(eps) , groupThreshold(gt),inclusionT(inc)
     {
         largestGroupId=-1;
         largestGroupEntities=-1;
         athletesPassed=1;
+
     }
 
     ~mat()

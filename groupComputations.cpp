@@ -13,12 +13,12 @@ int groupComputations::findMat(double m)
     unsigned i=0;
     int size=mats.size();
 
-    //std::cout<<"finding mat "<<m<<std::endl;
+   // std::cout<<"finding mat "<<m<<std::endl;
 
     if(mats.size()==0)
     {
         // add new mat and make a note on the group relations
-        mats.push_back(mat(m,0,epsilon,groupThreshold));
+        mats.push_back(mat(m,0,epsilon,groupThreshold,inclusionThreshold));
         relationsBackward.push_back(std::list< groupRelations* >());
         relationsForward.push_back(std::list< groupRelations* >());
         return 0;
@@ -31,17 +31,17 @@ int groupComputations::findMat(double m)
         else { i++; }
     }
 
-    //std::cout<<"found mat? "<<found<<std::endl;
+   // std::cout<<"found mat? "<<found<<std::endl;
 
     if(found)return i;
     else
     {
-        std::cout<<"MAT "<<m<<" NOT FOUND, size of mats "<<mats.size()<<" and i "<<i<<std::endl;
+       // std::cout<<"MAT "<<m<<" NOT FOUND, size of mats "<<mats.size()<<" and i "<<i<<std::endl;
 
         if(m>mats[i-1].getPosition())// here epsilon and threshold could be modified depending on the mat
         {
             // add new mat and make a note on the group relations
-            mats.push_back(mat(m,i,epsilon,groupThreshold));
+            mats.push_back(mat(m,i,epsilon,groupThreshold,inclusionThreshold));
             relationsBackward.push_back(std::list< groupRelations* >());
             relationsForward.push_back(std::list< groupRelations* >());
             return i;
@@ -65,11 +65,11 @@ void groupComputations::processEvent(groupComputations::iterator it)
         // first, find the mat the event belong to, if not present but feasible, add, if not, throw exception
         try {
             matNumber=findMat((*it).getPointAndTime().getPos());
-//             std::cout<<"groupComputations::processEvent, mat found "<<matNumber<<std::endl;
+            // std::cout<<"groupComputations::processEvent, mat found "<<matNumber<<std::endl;
         }
         catch (std::exception &e)
         {
-            std::cout<<"Exception caught at groupComputations::ProcessEvent (comming from find mat), funky business, measurement from misplaced mat "<<std::endl;
+            std::cout<<"Exception caught at groupComputations::ProcessEvent (comming from find mat), funky business, measurement from misplaced mat "<<(*it).getWho()->getName()<<" pos "<<(*it).getPointAndTime().getPos()<<std::endl;
             throw e;
         }
 
@@ -139,33 +139,27 @@ void groupComputations::computeGroupRelations() // this function should take eve
         thisMatComponents=mats[matIterator].getcomponents();
         thisMatGroupList=mats[matIterator].getGroups();
 
-        std::cout<<"*********************at Mat "<<matIterator<<" computing groups for mat "<<matIterator<<" with position "<<mats[matIterator].getPosition()<<" this one has this many groups: "<<thisMatGroupList->size()<<std::endl;
+       // std::cout<<"*********************at Mat "<<matIterator<<" computing groups for mat "<<matIterator<<" with position "<<mats[matIterator].getPosition()<<" this one has this many groups: "<<thisMatGroupList->size()<<std::endl;
         std::cout<<"*********************at Mat "<<matIterator<<" The biggest group here has id "<<mats[matIterator].getLargestGroupId()<<" and has this many entities "<<mats[matIterator].getLargestGroupEntities()<<std::endl;
 
         for(int i=0;i<thisMatGroupList->size();i++)            // for every group
         {
-            std::cout<<"0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA "<<i<<"/"<<thisMatGroupList->size()<<std::endl;
-
             // first, create the entry for the relations in this mat
             component *c = (*thisMatComponents)[(*thisMatGroupList)[i]];
-            std::cout<<"0BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB "<<lookBack<<std::endl;
             if (lookBack) relationsBackward[matIterator].push_back(new groupRelations(&mats[matIterator-1], c));
-            std::cout<<"1BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"<<std::endl;
             if (lookForward) relationsForward[matIterator].push_back(new groupRelations(&mats[matIterator + 1], c));
 
-            std::cout<<"01AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
 
             // Create backward relations
             for (component::iterator it = c->begin(); it != c->end(); ++it) {
-                std::cout<<"02AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
 
                 // process the event* here, check the previous group of the athlete
-                std::cout<<"athlete!!! "<<(*it)->getWho()->getId()<<std::endl;
+               // std::cout<<"athlete!!! "<<(*it)->getWho()->getId()<<std::endl;
 
                 if (lookBack) {
                     int athletePreviousGroup = (*it)->getWho()->groupAtIthMat(matIterator - 1);
                     if (athletePreviousGroup != -1) {
-                        std::cout<<"athlete "<<*(*it)->getWho()<<" has previous group "<<athletePreviousGroup<<std::endl;
+                 //       std::cout<<"athlete "<<*(*it)->getWho()<<" has previous group "<<athletePreviousGroup<<std::endl;
                         relationsBackward[matIterator].back()->addSharedEntity(athletePreviousGroup);
                     }
                     // The relations forward of the groups in the previous mat have already been taken care of
@@ -184,20 +178,23 @@ void groupComputations::computeGroupRelations() // this function should take eve
 
             }
 
-            std::cout<<"2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-
             // compute Inclusion Coefficients for Backward relations and update all the realational pointers of this group
             if (lookBack)
             {
 
-                std::cout<<"Processed group "<<c->getId()<<" with "<<c->numberOfGroupedEvents()<<" athletes at Mat "<<matIterator<<" found "<<((relationsBackward[matIterator]).back())->getTouchedGroups()->size()<<" groups touched backward"<<std::endl;
+                //std::cout<<"Processed group "<<c->getId()<<" with "<<c->numberOfGroupedEvents()<<" athletes at Mat "<<matIterator<<" found "<<((relationsBackward[matIterator]).back())->getTouchedGroups()->size()<<" groups touched backward"<<std::endl;
                 for (std::list<int>::iterator it3 = ((relationsBackward[matIterator]).back())->getTouchedGroups()->begin();
                      it3 != ((relationsBackward[matIterator]).back())->getTouchedGroups()->end(); ++it3) {
                     std::vector<int> *aux = ((relationsBackward[matIterator]).back())->getSharedEntitiesVector();
                    // std::cout<<" group "<<*it3<<" was touched "<<(*aux)[*it3]<<" times "<<std::endl;
 
-                    // compute Inclusion coefficients
+                    // first update the number of shared entities
                     double intersection = (*aux)[*it3];
+                    int sharedBefore=c->getNumEntitiesSharedBefore();
+                    sharedBefore=sharedBefore+intersection;
+                    c->setNumEntitiesSharedBefore(sharedBefore);
+
+                    // compute Inclusion coefficients
                     double elementsA = c->numberOfGroupedEvents();
                     double elementsB = mats[matIterator - 1].numElementsInComponent(*it3);
                     std::vector<double> *inclusionsBackward = ((relationsBackward[matIterator]).back())->getInclusionCoefficientsVector();
@@ -210,12 +207,12 @@ void groupComputations::computeGroupRelations() // this function should take eve
                     }
 
 
-                    if((*aux)[*it3]>500) std::cout << " backward group " << c->getId() << " in mat  " << matIterator << " shares with group " << *it3 << ", " << (*aux)[*it3] << " entitites. Coefs (ab,ba) "<<incCoefAB<<" "<<incCoefBA <<" intersection,elA,elB "<<intersection<<" "<<elementsA<<" "<<elementsB<< std::endl;
+                  //  if((*aux)[*it3]>500)  std::cout << " backward group " << c->getId() << " in mat  " << matIterator << " shares with group " << *it3 << ", " << (*aux)[*it3] << " entitites. Coefs (ab,ba) "<<incCoefAB<<" "<<incCoefBA <<" intersection,elA,elB "<<intersection<<" "<<elementsA<<" "<<elementsB<< std::endl;
 
                     // store in the group relation
                     (*inclusionsBackward)[*it3] = incCoefBA;
                     // If over the threshold, store in the list of the group
-                    if (incCoefBA > inclusionThreshold)c->addPrevioudRelatedGroup((*previousMatComponents)[*it3]);
+                    if (incCoefBA > inclusionThreshold)c->addPreviousRelatedGroup((*previousMatComponents)[*it3]);
                     // check also if this is the only group the current group is included in
 
 
@@ -229,16 +226,20 @@ void groupComputations::computeGroupRelations() // this function should take eve
                 }
             }
 
-            std::cout<<"3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"<<std::endl;
-
-            // compute Inclusion Coefficients for Forward relations and update all the relational pointers of this group
+             // compute Inclusion Coefficients for Forward relations and update all the relational pointers of this group
             if(lookForward) {
                 for (std::list<int>::iterator it3 = ((relationsForward[matIterator]).back())->getTouchedGroups()->begin();
                      it3 != ((relationsForward[matIterator]).back())->getTouchedGroups()->end(); ++it3) {
                     std::vector<int> *aux = ((relationsForward[matIterator]).back())->getSharedEntitiesVector();
 
-                    // compute Inclusion coefficients
+                    // first update the number of shared entities
                     double intersection = (*aux)[*it3];
+                    int sharedAfter=c->getNumEntitiesSharedAfter();
+                    sharedAfter=sharedAfter+intersection;
+                    c->setNumEntitiesSharedAfter(sharedAfter);
+
+
+                    // compute Inclusion coefficients
                     double elementsA = c->numberOfGroupedEvents();
                     double elementsB = mats[matIterator + 1].numElementsInComponent(*it3);
                     std::vector<double> *inclusionsForward = ((relationsForward[matIterator]).back())->getInclusionCoefficientsVector();
@@ -250,7 +251,7 @@ void groupComputations::computeGroupRelations() // this function should take eve
                         exit(-1);
                     }
 
-                   if((*aux)[*it3]>500) std::cout << " forward group " << c->getId() << " in mat  " << matIterator << " shares with group " << *it3 << ", " << (*aux)[*it3] << " entitites. Coefs (ab,ba) "<<incCoefAB<<" "<<incCoefBA<<" intersection,elA,elB "<<intersection<<" "<<elementsA<<" "<<elementsB << std::endl;
+                 // if((*aux)[*it3]>500) std::cout << " forward group " << c->getId() << " in mat  " << matIterator << " shares with group " << *it3 << ", " << (*aux)[*it3] << " entitites. Coefs (ab,ba) "<<incCoefAB<<" "<<incCoefBA<<" intersection,elA,elB "<<intersection<<" "<<elementsA<<" "<<elementsB << std::endl;
 
                     // store in the group relation
                     (*inclusionsForward)[*it3] = incCoefBA;
@@ -268,7 +269,7 @@ void groupComputations::computeGroupRelations() // this function should take eve
             }
 
         }
-        std::cout<<"******************* FINISHING Mat: "<<matIterator<<" with position "<<mats[matIterator].getPosition()<<" the bigger group here (id "<<mats[matIterator].getLargestGroupId()<<") had : "<<mats[matIterator].getLargestGroupEntities()<<" elements"<<std::endl;
+        //std::cout<<"******************* FINISHING Mat: "<<matIterator<<" with position "<<mats[matIterator].getPosition()<<" the bigger group here (id "<<mats[matIterator].getLargestGroupId()<<") had : "<<mats[matIterator].getLargestGroupEntities()<<" elements"<<std::endl;
         matIterator++;
     }
 }
@@ -304,7 +305,7 @@ std::list<component*> *groupComputations::longestSurvivingGroups() {
     int largesttNumberOfSteps = 0;
 
     while(matNumber<mats.size()) {
-        std::cout<<"starting longest group computations mat "<<matNumber<<std::endl;
+        //std::cout<<"starting longest group computations mat "<<matNumber<<std::endl;
         std::vector<component *> *startComponents = mats[matNumber].getcomponents();
         std::vector<int> *groupIndexes = mats[matNumber].getGroups();
 
@@ -325,8 +326,7 @@ std::list<component*> *groupComputations::longestSurvivingGroups() {
                     // store new information
                     returnList->push_back((*startComponents)[(*it)]);
                     largesttNumberOfSteps = aux;
-                    std::cout << "1UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux <<
-                    std::endl;
+                  //  std::cout << "1UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux <<std::endl;
                 }
             }
         }
@@ -344,7 +344,7 @@ std::list<component*> *groupComputations::longestSurvivingGroups(int matNumber) 
     std::vector<component*>* startComponents = mats[matNumber].getcomponents();
     std::vector<int>* groupIndexes = mats[matNumber].getGroups();
 
-    std::cout<<"survival, mat position "<<mats[matNumber].getPosition()<<std::endl;
+  //  std::cout<<"survival, mat position "<<mats[matNumber].getPosition()<<std::endl;
 
     // compute longest surviving time and store at the same time
     std::vector<int>::iterator it;
@@ -361,7 +361,7 @@ std::list<component*> *groupComputations::longestSurvivingGroups(int matNumber) 
             // store new information
             returnList->push_back((*startComponents)[(*it)]);
             largesttNumberOfSteps=aux;
-            std::cout<<"2UPDATING LONGEST GROUP LIST, now maximum surviving step number is "<<aux<<std::endl;
+            //std::cout<<"2UPDATING LONGEST GROUP LIST, now maximum surviving step number is "<<aux<<std::endl;
         }
     }
     return returnList;
@@ -391,7 +391,7 @@ std::list<component *> *groupComputations::longestRelatedGroupForward() {
     int matNumber=0;
     int largesttNumberOfSteps = 0;
     while(matNumber<mats.size()) {
-        std::cout<<"starting longest related group forward computations mat "<<matNumber<<std::endl;
+        //std::cout<<"starting longest related group forward computations mat "<<matNumber<<std::endl;
         std::vector<component *> *startComponents = mats[matNumber].getcomponents();
         std::vector<int> *groupIndexes = mats[matNumber].getGroups();
 
@@ -400,11 +400,13 @@ std::list<component *> *groupComputations::longestRelatedGroupForward() {
         int count=1;
 
         for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) {
-            // std::cout<<"starting survival computation for group id "<<(*it)<<" at mat "<<matNumber<<" groups to be looked at "<<groupIndexes->size()<<std::endl;
+           // std::cout<<"starting survival computation for group id "<<(*it)<<" at mat "<<matNumber<<" groups to be looked at "<<groupIndexes->size()<<std::endl;
             // check that this group starts at the given mat
             if(!(*startComponents)[(*it)]->containsSomeoneBefore()) {
-                //std::cout<<"group "<<(*it)<<" at mat "<<matNumber<<" has not survived "<<count++<<"/"<<groupIndexes->size()<<std::endl;
+              //  std::cout<<"group "<<(*it)<<" at mat "<<matNumber<<" has not survived "<<count++<<"/"<<groupIndexes->size()<<std::endl;
                 int aux = (*startComponents)[(*it)]->maximumIncludedStepsForward();
+             //   std::cout<<"group "<<(*it)<<" at mat "<<matNumber<<" goes forwars "<<aux<<" steps"<<std::endl;
+
                 if (aux != 0 && aux == largesttNumberOfSteps)returnList->push_back((*startComponents)[(*it)]);
                 else if (aux > largesttNumberOfSteps) {
                     // found a largest possible step lenght, pop all stored untill now
@@ -412,10 +414,12 @@ std::list<component *> *groupComputations::longestRelatedGroupForward() {
                     // store new information
                     returnList->push_back((*startComponents)[(*it)]);
                     largesttNumberOfSteps = aux;
-                    std::cout << "3UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux <<
-                    std::endl;
+                   // std::cout << "3UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux <<std::endl;
                 }
             }
+            //else{         std::cout<<" group id "<<(*it)<<" at mat "<<matNumber<<" contains someone before "<<std::endl;}
+
+
         }
         // check that getting a longer surviving group is still possible
         if(largesttNumberOfSteps>mats.size()-matNumber) matNumber=mats.size();
@@ -430,7 +434,7 @@ std::list<component *> *groupComputations::longestRelatedGroupBackward() {
     int matNumber=mats.size()-1;
     int largesttNumberOfSteps = 0;
     while(matNumber>=0) {
-        std::cout<<"starting longest related group Backwards computations mat "<<matNumber<<std::endl;
+        //std::cout<<"starting longest related group Backwards computations mat "<<matNumber<<std::endl;
         std::vector<component *> *startComponents = mats[matNumber].getcomponents();
         std::vector<int> *groupIndexes = mats[matNumber].getGroups();
 
@@ -451,14 +455,172 @@ std::list<component *> *groupComputations::longestRelatedGroupBackward() {
                     // store new information
                     returnList->push_back((*startComponents)[(*it)]);
                     largesttNumberOfSteps = aux;
-                    std::cout << "4UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux <<
-                    std::endl;
+                  //  std::cout << "4UPDATING LONGEST GROUP LIST, now maximum surviving step number is " << aux << std::endl;
                 }
             }
         }
         // check that getting a longer surviving group is still possible
-        if(largesttNumberOfSteps>matNumber+1) matNumber=mats.size();
-        else matNumber--;
+       // if(largesttNumberOfSteps>matNumber+1) matNumber=mats.size();
+        //else matNumber--;
+        matNumber--;
     }
     return returnList;
+}
+
+int groupComputations::countSurvives() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+       // std::cout<<"starting the count for the number of surviving groups in mat "<<matNumber<<std::endl;
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->willSurvive()) {count++;} }
+        matNumber++;
+    }
+    return count;
+}
+
+int groupComputations::countMerges() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        // std::cout<<"starting the count for the number of surviving groups in mat "<<matNumber<<std::endl;
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->merges()) {
+               // std::cout<<"gc::count merges updatting count"<<count<<std::endl;
+                count++;} }
+        matNumber++;
+    }
+    return count;
+}
+
+int groupComputations::countSplits() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        // std::cout<<"starting the count for the number of surviving groups in mat "<<matNumber<<std::endl;
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->splits()) {count++;} }
+        matNumber++;
+    }
+    return count;
+}
+
+int groupComputations::countExpands() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->expands()) {count++;} }
+        matNumber++;
+    }
+    return count;
+}
+
+int groupComputations::countShrinks() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->shrinks()) {count++;} }
+        matNumber++;
+    }
+    return count;}
+
+int groupComputations::countCoheres() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        // std::cout<<"starting the count for the number of surviving groups in mat "<<matNumber<<std::endl;
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->coheres()) {count++; }
+        }
+        matNumber++;
+    }
+    return count;}
+
+int groupComputations::countDisbands() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        // std::cout<<"starting the count for the number of surviving groups in mat "<<matNumber<<std::endl;
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->disbands()) {count++;} }
+        matNumber++;
+    }
+    return count;}
+
+int groupComputations::countAppears() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->appears()){count++;} }
+        matNumber++;
+    }
+    return count;
+}
+
+int groupComputations::countDissappears() {
+    int matNumber=0;
+    int count=0;
+
+    while(matNumber<mats.size()) {
+        std::vector<component *> *startComponents = mats[matNumber].getcomponents();
+        std::vector<int> *groupIndexes = mats[matNumber].getGroups();
+
+        // compute longest surviving time and store at the same time
+        std::vector<int>::iterator it;
+
+        for (it = groupIndexes->begin(); it != groupIndexes->end(); it++) { if((*startComponents)[(*it)]->dissappears()) {count++;} }
+        matNumber++;
+    }
+    return count;
 }
